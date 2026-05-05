@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Caminhos em Grafos e o GPS o</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Baloo+2:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --accent:  #2563eb;
+    --accent2: #ea580c;
+    --accent3: #d97706;
+    --correct: #16a34a;
+    --wrong:   #dc2626;
+    --bg:      #f0f4ff;
+    --card:    #ffffff;
+    --card2:   #f8faff;
+    --text:    #1e293b;
+    --muted:   #64748b;
+    --border:  #cbd5e1;
+    --header1: #1e3a8a;
+    --header2: #1d4ed8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, var(--header1) 0%, var(--header2) 60%, #1e40af 100%);
+    border-bottom: 4px solid #93c5fd;
+    padding: 28px 24px 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(147,197,253,0.18) 0%, transparent 70%);
+  }
+  .header-tag {
+    display: inline-block;
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.45);
+    color: #bfdbfe;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 4px 14px;
+    border-radius: 20px;
+    margin-bottom: 10px;
+  }
+  .header h1 {
+    font-family: 'Baloo 2', cursive;
+    font-size: clamp(22px, 5vw, 38px);
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.1;
+    position: relative;
+  }
+  .header h1 span { color: #7dd3fc; }
+  .header-sub {
+    font-size: 13px;
+    color: #bfdbfe;
+    margin-top: 6px;
+    position: relative;
+  }
+
+  /* SECTIONS */
+  .section {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 28px 20px;
+  }
+  .section-title {
+    font-family: 'Baloo 2', cursive;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border);
+  }
+  .section-title .num {
+    background: var(--accent);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 900;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* CONCEPT CARDS */
+  .concepts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 6px; }
+  .concept-card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 16px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(37,99,235,0.07);
+  }
+  .concept-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 4px;
+  }
+  .concept-card.c1::before { background: var(--accent); }
+  .concept-card.c2::before { background: var(--accent2); }
+  .concept-card.c3::before { background: var(--accent3); }
+  .concept-card .icon { font-size: 28px; margin-bottom: 8px; }
+  .concept-card h3 { font-size: 14px; font-weight: 800; margin-bottom: 6px; }
+  .concept-card.c1 h3 { color: var(--accent); }
+  .concept-card.c2 h3 { color: var(--accent2); }
+  .concept-card.c3 h3 { color: #92400e; }
+  .concept-card p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+  /* GRAPH CANVAS AREA */
+  .graph-container {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 10px rgba(37,99,235,0.07);
+  }
+  .graph-label {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  canvas#grafo {
+    width: 100%;
+    max-width: 700px;
+    display: block;
+    margin: 0 auto;
+    border-radius: 10px;
+    background: #eef2ff;
+    cursor: pointer;
+    border: 1.5px solid #c7d2fe;
+  }
+
+  /* CONTROLS */
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-top: 14px;
+  }
+  .ctrl-label { font-size: 13px; color: var(--muted); font-weight: 700; }
+  .node-select {
+    background: var(--card2);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 7px 14px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .node-select:focus { outline: none; border-color: var(--accent); }
+  .btn {
+    border: none;
+    border-radius: 10px;
+    padding: 8px 18px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.1s, filter 0.15s;
+  }
+  .btn:hover { filter: brightness(1.08); transform: scale(1.03); }
+  .btn:active { transform: scale(0.97); }
+  .btn-accent { background: var(--accent); color: #fff; }
+  .btn-orange { background: var(--accent2); color: #fff; }
+  .btn-gray { background: #e2e8f0; color: var(--text); }
+
+  .path-result {
+    margin-top: 14px;
+    background: #eff6ff;
+    border: 1.5px solid #93c5fd;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 14px;
+    display: none;
+  }
+  .path-result.show { display: block; }
+  .path-result .path-nodes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+  }
+  .path-node {
+    background: var(--accent);
+    color: #fff;
+    font-weight: 900;
+    font-size: 13px;
+    padding: 3px 10px;
+    border-radius: 8px;
+  }
+  .path-arrow { color: var(--accent); font-size: 16px; font-weight: 900; }
+  .path-dist { color: var(--accent3); font-weight: 800; margin-left: 8px; }
+
+  /* ADJACENCY TABLE */
+  .adj-wrapper { overflow-x: auto; }
+  .adj-table {
+    border-collapse: collapse;
+    font-size: 13px;
+    min-width: 100%;
+  }
+  .adj-table th, .adj-table td {
+    border: 1.5px solid var(--border);
+    padding: 8px 12px;
+    text-align: center;
+    min-width: 44px;
+  }
+  .adj-table th {
+    background: #dbeafe;
+    color: var(--accent);
+    font-weight: 800;
+    font-size: 12px;
+  }
+  .adj-table td { background: #fff; color: var(--muted); font-weight: 700; }
+  .adj-table td.yes { color: var(--correct); font-weight: 900; background: #f0fdf4; }
+  .adj-table td.diag { background: #f1f5f9; color: #94a3b8; }
+  .adj-table tr:hover td { background: #eff6ff; }
+
+  /* QUIZ */
+  .quiz-block {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 18px 14px;
+    margin-bottom: 14px;
+    box-shadow: 0 1px 6px rgba(37,99,235,0.05);
+  }
+  .quiz-q {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    line-height: 1.5;
+    color: var(--text);
+  }
+  .quiz-q strong { color: var(--accent); }
+  .quiz-options { display: flex; flex-direction: column; gap: 8px; }
+  .quiz-opt {
+    background: var(--card2);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    cursor: pointer;
+    text-align: left;
+    font-family: 'Nunito', sans-serif;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .quiz-opt:hover:not(:disabled) { border-color: var(--accent); background: #eff6ff; }
+  .quiz-opt.correct { border-color: var(--correct); background: #f0fdf4; color: var(--correct); }
+  .quiz-opt.wrong { border-color: var(--wrong); background: #fef2f2; color: var(--wrong); }
+  .quiz-opt:disabled { cursor: default; }
+  .quiz-feedback {
+    margin-top: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    display: none;
+    padding: 7px 12px;
+    border-radius: 8px;
+  }
+  .quiz-feedback.ok { display: block; background: #f0fdf4; color: var(--correct); border: 1px solid #bbf7d0; }
+  .quiz-feedback.fail { display: block; background: #fef2f2; color: var(--wrong); border: 1px solid #fecaca; }
+
+  /* SCORE */
+  .score-bar {
+    background: linear-gradient(135deg, #eff6ff, #f0fdf4);
+    border: 2px solid #93c5fd;
+    border-radius: 14px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+    box-shadow: 0 2px 12px rgba(37,99,235,0.1);
+  }
+  .score-val { font-family: 'Baloo 2', cursive; font-size: 36px; font-weight: 800; color: var(--accent); }
+  .score-info { flex: 1; }
+  .score-info p { font-size: 13px; color: var(--muted); }
+  .score-info strong { font-size: 15px; color: var(--text); }
+  .btn-retry { margin-left: auto; }
+
+  /* DIVIDER */
+  .divider { border: none; border-top: 2px solid var(--border); margin: 8px 0 24px; }
+
+  /* FOOTER */
+  footer {
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    padding: 18px;
+    border-top: 2px solid var(--border);
+    background: #fff;
+  }
+  footer strong { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-tag">Pensamento Computacional</div>
+  <h1>🗺️ Caminhos em <span>Grafos</span></h1>
+  <p class="header-sub">Explore vértices, arestas, caminhos mínimos e tabelas de adjacência</p>
+</div>
+
+<div class="section">
+
+  <!-- CONCEITOS -->
+  <div class="section-title"><span class="num">1</span> Conceitos Fundamentais</div>
+  <div class="concepts">
+    <div class="concept-card c1">
+      <div class="icon">🔵</div>
+      <h3>Caminho</h3>
+      <p>É uma sequência de <strong>vértices</strong> (pontos) ligados por <strong>arestas</strong> (linhas). É o trajeto que fazemos para sair do ponto A e chegar ao ponto B.</p>
+    </div>
+    <div class="concept-card c2">
+      <div class="icon">🧭</div>
+      <h3>Caminho Mínimo</h3>
+      <p>É o trajeto <strong>mais curto ou mais rápido</strong> entre dois pontos. O GPS usa esse conceito para te guiar pelo menor percurso!</p>
+    </div>
+    <div class="concept-card c3">
+      <div class="icon">📊</div>
+      <h3>Tabela de Adjacência</h3>
+      <p>Uma tabela com <strong>Sim/Não</strong> (ou 1/0) que indica se dois pontos estão diretamente ligados por uma aresta.</p>
+    </div>
+  </div>
+  <hr class="divider">
+
+  <!-- GRAFO INTERATIVO -->
+  <div class="section-title"><span class="num">2</span> Grafo Interativo — Mapa da Cidade</div>
+  <p style="font-size:15px;color:var(--muted);margin-bottom:14px;">O grafo abaixo representa uma cidade com 6 bairros. Cada círculo é um <strong style="color:var(--accent)">vértice</strong> (bairro) e cada linha é uma <strong style="color:var(--accent2)">aresta</strong> (rua). Os números mostram a <strong style="color:var(--accent3)">distância em km. </strong> <strong> Use os campos abaixo "De/Até" para estar verificando como funciona.</strong>.</p>
+
+  <div class="graph-container">
+    <div class="graph-label">🏙️ Mapa dos Bairros</div>
+    <canvas id="grafo" width="700" height="360"></canvas>
+    <div class="controls">
+      <span class="ctrl-label">De:</span>
+      <select class="node-select" id="origem">
+        <option value="0">🏠 Casa</option>
+        <option value="1">🏫 Escola</option>
+        <option value="2">🏥 Hospital</option>
+        <option value="3">🛒 Mercado</option>
+        <option value="4">🌳 Parque</option>
+        <option value="5">🏦 Banco</option>
+      </select>
+      <span class="ctrl-label">Até:</span>
+      <select class="node-select" id="destino">
+        <option value="0">🏠 Casa</option>
+        <option value="1">🏫 Escola</option>
+        <option value="2">🏥 Hospital</option>
+        <option value="3" selected>🛒 Mercado</option>
+        <option value="4">🌳 Parque</option>
+        <option value="5">🏦 Banco</option>
+      </select>
+      <button class="btn btn-accent" onclick="calcPath()">🔍 Encontrar Caminho Mínimo</button>
+      <button class="btn btn-gray" onclick="resetGraph()">↺ Limpar</button>
+    </div>
+    <div class="path-result" id="pathResult">
+      <strong style="color:var(--accent);font-size:13px;">📍 Caminho encontrado pelo GPS:</strong>
+      <div class="path-nodes" id="pathNodes"></div>
+    </div>
+  </div>
+  <hr class="divider">
+
+  <!-- TABELA DE ADJACÊNCIA -->
+  <div class="section-title"><span class="num">3</span> Tabela de Adjacência</div>
+  <p style="font-size:15px;color:var(--muted);margin-bottom:14px;">A tabela abaixo mostra quais bairros estão <strong style="color:var(--accent)">diretamente conectados</strong> por uma rua. <strong>SIM</strong> = existe rua direta. <strong>NÃO</strong> = sem rua direta. Observe a tabela para compreender como funciona.</p>
+
+  <div class="graph-container">
+    <div class="adj-wrapper">
+      <table class="adj-table" id="adjTable"></table>
+    </div>
+  </div>
+  <hr class="divider">
+
+  <!-- QUIZ -->
+  <div class="section-title"><span class="num">4</span> Atividade — Teste seus Conhecimentos</div>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Responda as <strong style="color:var(--accent)">10 questões</strong> abaixo. Cada resposta certa vale <strong style="color:var(--accent3)">1 ponto</strong>. Boa sorte! 🎯</p>
+
+  <div class="quiz-block" id="q1">
+    <div class="quiz-q">1. O que é um <strong>vértice</strong> em um grafo?</div>
+    <div class="quiz-options">
+      <button class="quiz-opt" onclick="answer(this,'q1',false)">A) A linha que conecta dois pontos</button>
+      <button class="quiz-opt" onclick="answer(this,'q1',true)">B) Um ponto ou local no grafo (como um bairro ou cidade)</button>
+      <button class="quiz-opt" onclick="answer(this,'q1',false)">C) A distância em km entre dois bairros</button>
+      <button class="quiz-opt" onclick="answer(this,'q1',false)">D) O nome do caminho mais longo do grafo</button>
+    </div>
+    <div class="quiz-feedback" id="fb-q1"></div>
+  </div>
+
+  <div class="quiz-block" id="q2">
+    <div class="quiz-q">2. Como chamamos a <strong>linha que liga dois vértices</strong> em um grafo?</div>
+    <div class="quiz-options">
+      <button class="quiz-opt" onclick="answer(this,'q2',false)">A) Vértice</button>
+      <button class="quiz-opt" onclick="answer(this,'q2',false)">B) Nó</button>
+      <button class="quiz-opt" onclick="answer(this,'q2',true)">C) Aresta</button>
+      <button class="quiz-opt" onclick="answer(this,'q2',false)">D) Rota</button>
+    </div>
+    <div class="quiz-feedback" id="fb-q2"></div>
+  </div>
+
+  <div class="quiz-block" id="q3">
+    <div class="quiz-q">3. O <strong>GPS</strong> do celular usa o conceito de caminho mínimo. O que ele busca encontrar?</div>
+    <div class="quiz-options">
+      <button class="quiz-opt" onclick="answer(this,'q3',false)">A) O caminho que passa pelo maior número de ruas</button>
+      <button class="quiz-opt" onclick="answer(this,'q3',false)">B) O caminho que passa por todos os bairros da cidade</button>
+      <button class="quiz-opt" onclick="answer(this,'q3',true)">C) O trajeto mais curto ou mais rápido entre dois pontos</button>
+      <button class="quiz-opt" onclick="answer(this,'q3',false)">D) O caminho com o maior número de semáforos</button>
+    </div>
+    <div class="quiz-feedback" id="fb-q3"></div>
+  </div>
+
+  <div class="quiz-block" id="q4">
+    <div class="quiz-q">4. Na <strong>Tabela de Adjacência</strong>, o que significa o valor <strong style="color:var(--wrong)">NÃO</strong> (ou 0) entre dois bairros?</div>
+    <div class="quiz-options">
+      <button class="quiz-opt" onclick="answer(this,'q4',false)">A) Os dois bairros têm o mesmo nome</button>
+      <button class="quiz-opt" onclick="answer(this,'q4',true)">B) Não existe rua direta ligando os dois bairros</button>
+      <button class="quiz-opt" onclick="answer(this,'q4',false)">C) A distância entre eles é zero km</button>
+      <button class="quiz-opt" onclick="answer(this,'q4',false)">D) Os bairros ficam em cidades diferentes</button>
+    </div>
+    <div class="quiz-feedback" id="fb-q4"></div>
+  </div>
+
+  <div class="quiz-block" id="q5">
+    <div class="quiz-q">5. Observe o grafo da cidade acima. Qual é um <strong>caminho válido</strong> de <strong style="color:var(--accent)">🏠 Casa</strong> até <strong style="color:var(--accent2)">🏥 Hospital</strong>?</div>
+    <div class="quiz-options">
+      <button class="quiz-opt" onclick="answer(this,'q5',false)">A) Casa → Banco → Parque → Hospital</button>
+      <button class="quiz-opt" onclick="answer(this,'q5',true)">B) Casa → Escola → Hospital</button>
+      <button class="quiz-opt" onclick="answer(this,'q5',false)">C) Casa → Mercado → Banco → Hospital</button>
+      <button class="quiz-opt" onclick="answer(this,'q5',false)">D) Casa → Hospital (não existe rua direta)</button>
+    </div>
+    <div class="quiz-feedback" id="fb-q5"></div>
+  </div>
+
+  <div class="quiz-block" id="q6">
+    <div class="quiz-q">6. Um grafo tem os vértices A, B, C e D, com as arestas: A–B, B–C e C–D. Qual é o <strong>único caminho possível</strong> de A até D?</div>
+    <div class="quiz-options">
+      <button class="quiz-opt" onclick="answer(this,'q6',false)">A) A → C → D</button>
+      <button class="quiz-opt" onclick="answer(this,'q6',false)">B) A → D (direto)</button>
+      <button class="quiz-opt" onclick="answer(this,'q6',true)">C) A → B → C → D</button>
+      <button class="quiz-opt" onclick="answer(this,'q6',false)">D) A → B → D</button>
+    </div>
+    <div class="quiz-feedback" id="fb-q6"></div>
+  </div>
+
+  <div class="quiz-block" id="q7">
+    <div class="quiz-q">7. No grafo da cidade, qual é a <strong>distância total</strong> do caminho 🏠 Casa → 🏫 Escola → 🛒 Mercado?</div>
+    <div class="quiz-options">
+      <button class="quiz-opt" onclick="answer(this,'q7',false)">A) 4 km</button>
+      <button class="quiz-opt" onclick="answer(this,'q7',true)">B) 5 km (3km + 2km)</button>
+      <button class="quiz-opt" onclick="answer(this,'q7',false)">C) 7 km</button>
+      <button class="quiz-opt" onclick="answer(this,'q7',false)">D) 10 km</button>
+    </div>
+    <div class="quiz-feedback" id="fb-q7"></div>
+  </div>
+
+  <div class="quiz-block" id="q8">
+    <div class="quiz-q">8. Na Tabela de Adjacência do grafo da cidade, a célula <strong style="color:var(--accent)">Escola × Hospital</strong> deve conter:</div>
+    <div class="quiz-options">
+      <button class="quiz-opt" onclick="answer(this,'q8',false)">A) NÃO — não há rua entre eles</button>
+      <button class="quiz-opt" onclick="answer(this,'q8',true)">B) SIM — existe rua direta entre Escola e Hospital</button>
+      <button class="quiz-opt" onclick="answer(this,'q8',false)">C) — (traço, pois são o mesmo bairro)</button>
+      <button class="quiz-opt" onclick="answer(this,'q8',false)">D) A distância em km entre eles</button>
+    </div>
+    <div class="quiz-feedback" id="fb-q8"></div>
+  </div>
+
+  <div class="quiz-block" id="q9">
+    <div class="quiz-q">9. Por que a <strong>diagonal principal</strong> da Tabela de Adjacência recebe um traço (—)?</div>
+    <div class="quiz-options">
+      <button class="quiz-opt" onclick="answer(this,'q9',false)">A) Porque esses bairros ficam muito longe um do outro</button>
+      <button class="quiz-opt" onclick="answer(this,'q9',false)">B) Porque não há informação disponível</button>
+      <button class="quiz-opt" onclick="answer(this,'q9',true)">C) Porque representa o mesmo bairro com ele mesmo — não faz sentido perguntar se está conectado a si próprio</button>
+      <button class="quiz-opt" onclick="answer(this,'q9',false)">D) Porque esses bairros não existem no grafo</button>
+    </div>
+    <div class="quiz-feedback" id="fb-q9"></div>
+  </div>
+
+  <div class="quiz-block" id="q10">
+    <div class="quiz-q">10. Imagine que você quer ir de 🏠 <strong>Casa</strong> até 🏦 <strong>Banco</strong>. Usando o grafo da cidade, qual caminho possui a <strong>menor distância total</strong>?</div>
+    <div class="quiz-options">
+      <button class="quiz-opt" onclick="answer(this,'q10',false)">A) Casa → Mercado → Banco (5 + 4 = 9 km)</button>
+      <button class="quiz-opt" onclick="answer(this,'q10',true)">B) Casa → Escola → Mercado → Banco (3 + 2 + 4 = 9 km) — empate, mas válido como mínimo</button>
+      <button class="quiz-opt" onclick="answer(this,'q10',false)">C) Casa → Escola → Hospital → Parque → Banco (3+4+3+2 = 12 km)</button>
+      <button class="quiz-opt" onclick="answer(this,'q10',false)">D) Casa → Escola → Parque → Banco (3+6+2 = 11 km)</button>
+    </div>
+    <div class="quiz-feedback" id="fb-q10"></div>
+  </div>
+
+  <div class="score-bar" id="scorebar" style="display:none">
+    <div class="score-val" id="scoreVal">0/10</div>
+    <div class="score-info">
+      <strong id="scoreMsg"></strong>
+      <p id="scoreDetail"></p>
+    </div>
+    <button class="btn btn-gray btn-retry" onclick="retryQuiz()">↺ Tentar novamente</button>
+  </div>
+</div>
+
+<footer>
+  <strong>Material Pedagógico — Profª Adriana Bett Terebinto © 2026</strong><br>
+ 
+</footer>
+
+<script>
+// ── GRAPH DATA ──────────────────────────────────────────────
+const LABELS = ['Casa','Escola','Hospital','Mercado','Parque','Banco'];
+const ICONS  = ['🏠','🏫','🏥','🛒','🌳','🏦'];
+
+// Adjacency with weights (km)
+const EDGES = [
+  [0,1,3],[0,3,5],
+  [1,2,4],[1,3,2],[1,4,6],
+  [2,4,3],[2,5,5],
+  [3,5,4],
+  [4,5,2]
+];
+
+// Node positions (normalized 0..1)
+const POS = [
+  [0.12,0.72],
+  [0.35,0.28],
+  [0.65,0.22],
+  [0.30,0.72],
+  [0.70,0.62],
+  [0.88,0.38],
+];
+
+let canvas, ctx, W, H;
+let highlightPath = [];
+
+function initCanvas(){
+  canvas = document.getElementById('grafo');
+  ctx = canvas.getContext('2d');
+  resize();
+  window.addEventListener('resize', resize);
+  drawGraph();
+}
+
+function resize(){
+  const rect = canvas.parentElement.getBoundingClientRect();
+  W = Math.min(700, rect.width - 32);
+  H = Math.round(W * 360/700);
+  canvas.width = W; canvas.height = H;
+  drawGraph();
+}
+
+function nodeXY(i){
+  return [Math.round(POS[i][0]*W), Math.round(POS[i][1]*H)];
+}
+
+function drawGraph(){
+  if(!ctx) return;
+  ctx.clearRect(0,0,W,H);
+
+  // background grid dots
+  ctx.fillStyle = 'rgba(99,120,200,0.18)';
+  for(let x=20;x<W;x+=30) for(let y=20;y<H;y+=30){
+    ctx.beginPath(); ctx.arc(x,y,1.2,0,Math.PI*2); ctx.fill();
+  }
+
+  // edges
+  EDGES.forEach(([a,b,w])=>{
+    const [ax,ay]=nodeXY(a), [bx,by]=nodeXY(b);
+    const inPath = isEdgeInPath(a,b);
+    ctx.beginPath();
+    ctx.moveTo(ax,ay); ctx.lineTo(bx,by);
+    ctx.strokeStyle = inPath ? '#2563eb' : '#94a3b8';
+    ctx.lineWidth = inPath ? 4 : 2;
+    ctx.setLineDash(inPath ? [] : [6,4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // weight label
+    const mx=(ax+bx)/2, my=(ay+by)/2;
+    ctx.fillStyle = inPath ? '#dbeafe' : '#f1f5f9';
+    ctx.beginPath(); ctx.ellipse(mx,my,16,11,0,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle = inPath ? '#93c5fd' : '#cbd5e1';
+    ctx.lineWidth=1; ctx.stroke();
+    ctx.fillStyle = inPath ? '#1d4ed8' : '#64748b';
+    ctx.font = `bold ${Math.max(10,W/65)}px Nunito`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(w+'km', mx, my);
+  });
+
+  // nodes
+  LABELS.forEach((lbl,i)=>{
+    const [x,y]=nodeXY(i);
+    const inPath = highlightPath.includes(i);
+    const isFirst = highlightPath[0]===i;
+    const isLast  = highlightPath[highlightPath.length-1]===i;
+
+    // glow
+    if(inPath){
+      const g=ctx.createRadialGradient(x,y,0,x,y,28);
+      g.addColorStop(0,'rgba(37,99,235,0.18)');
+      g.addColorStop(1,'rgba(37,99,235,0)');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,28,0,Math.PI*2); ctx.fill();
+    }
+
+    // circle shadow
+    ctx.shadowColor='rgba(0,0,0,0.12)'; ctx.shadowBlur=6;
+    ctx.beginPath(); ctx.arc(x,y,19,0,Math.PI*2);
+    if(isFirst){ ctx.fillStyle='#2563eb'; }
+    else if(isLast){ ctx.fillStyle='#ea580c'; }
+    else if(inPath){ ctx.fillStyle='#0ea5e9'; }
+    else { ctx.fillStyle='#fff'; }
+    ctx.fill();
+    ctx.shadowColor='transparent'; ctx.shadowBlur=0;
+    ctx.strokeStyle = inPath ? '#1d4ed8' : '#94a3b8';
+    ctx.lineWidth=2; ctx.stroke();
+
+    // emoji
+    ctx.font = `${Math.max(12,W/52)}px serif`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(ICONS[i], x, y);
+
+    // label
+    const labY = y+22;
+    ctx.font = `bold ${Math.max(10,W/68)}px Nunito`;
+    const tw=ctx.measureText(lbl).width;
+    ctx.fillStyle='rgba(240,244,255,0.88)';
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(x-tw/2-4,labY-1,tw+8,15,4) : ctx.rect(x-tw/2-4,labY-1,tw+8,15);
+    ctx.fill();
+    ctx.fillStyle = inPath ? '#1d4ed8' : '#475569';
+    ctx.textAlign='center'; ctx.textBaseline='top';
+    ctx.fillText(lbl, x, labY);
+  });
+}
+
+function isEdgeInPath(a,b){
+  for(let i=0;i<highlightPath.length-1;i++){
+    if((highlightPath[i]===a && highlightPath[i+1]===b)||
+       (highlightPath[i]===b && highlightPath[i+1]===a)) return true;
+  }
+  return false;
+}
+
+// ── DIJKSTRA ─────────────────────────────────────────────────
+function dijkstra(src, dst){
+  const n=LABELS.length;
+  const dist=Array(n).fill(Infinity);
+  const prev=Array(n).fill(-1);
+  const vis=Array(n).fill(false);
+  dist[src]=0;
+  for(let i=0;i<n;i++){
+    let u=-1;
+    for(let v=0;v<n;v++) if(!vis[v]&&(u===-1||dist[v]<dist[u])) u=v;
+    if(u===-1||dist[u]===Infinity) break;
+    vis[u]=true;
+    EDGES.forEach(([a,b,w])=>{
+      if(a===u&&dist[u]+w<dist[b]){ dist[b]=dist[u]+w; prev[b]=u; }
+      if(b===u&&dist[u]+w<dist[a]){ dist[a]=dist[u]+w; prev[a]=u; }
+    });
+  }
+  const path=[];
+  for(let v=dst;v!==-1;v=prev[v]) path.unshift(v);
+  if(path[0]!==src) return null;
+  return { path, dist: dist[dst] };
+}
+
+function calcPath(){
+  const src=parseInt(document.getElementById('origem').value);
+  const dst=parseInt(document.getElementById('destino').value);
+  if(src===dst){ alert('Escolha pontos diferentes!'); return; }
+  const res=dijkstra(src,dst);
+  if(!res){ alert('Não há caminho entre esses pontos!'); return; }
+  highlightPath=res.path;
+  drawGraph();
+  const el=document.getElementById('pathResult');
+  const nodesEl=document.getElementById('pathNodes');
+  el.classList.add('show');
+  nodesEl.innerHTML='';
+  res.path.forEach((n,i)=>{
+    const sp=document.createElement('span');
+    sp.className='path-node';
+    sp.textContent=ICONS[n]+' '+LABELS[n];
+    nodesEl.appendChild(sp);
+    if(i<res.path.length-1){
+      const ar=document.createElement('span');
+      ar.className='path-arrow'; ar.textContent='→';
+      nodesEl.appendChild(ar);
+    }
+  });
+  const dist=document.createElement('span');
+  dist.className='path-dist';
+  dist.textContent='📏 Distância total: '+res.dist+'km';
+  nodesEl.appendChild(dist);
+}
+
+function resetGraph(){
+  highlightPath=[];
+  drawGraph();
+  document.getElementById('pathResult').classList.remove('show');
+}
+
+// ── ADJACENCY TABLE ───────────────────────────────────────────
+function buildAdjTable(){
+  const n=LABELS.length;
+  const mat=Array.from({length:n},()=>Array(n).fill(0));
+  EDGES.forEach(([a,b])=>{ mat[a][b]=1; mat[b][a]=1; });
+  const tbl=document.getElementById('adjTable');
+  let html='<tr><th>↔</th>';
+  LABELS.forEach((l,i)=>html+=`<th>${ICONS[i]}<br>${l}</th>`);
+  html+='</tr>';
+  LABELS.forEach((row,i)=>{
+    html+=`<tr><th style="text-align:left">${ICONS[i]} ${row}</th>`;
+    LABELS.forEach((_,j)=>{
+      if(i===j) html+=`<td class="diag">—</td>`;
+      else html+=`<td class="${mat[i][j]?'yes':''}">${mat[i][j]?'SIM':'NÃO'}</td>`;
+    });
+    html+='</tr>';
+  });
+  tbl.innerHTML=html;
+}
+
+// ── QUIZ ──────────────────────────────────────────────────────
+const ALL_QS = ['q1','q2','q3','q4','q5','q6','q7','q8','q9','q10'];
+let scores={};
+let answered={};
+
+function answer(btn, qid, correct){
+  if(answered[qid]) return;
+  answered[qid]=true;
+  const block=document.getElementById(qid);
+  block.querySelectorAll('.quiz-opt').forEach(b=>b.disabled=true);
+  const fb=document.getElementById('fb-'+qid);
+  if(correct){
+    btn.classList.add('correct');
+    fb.className='quiz-feedback ok';
+    fb.textContent='✅ Correto! Muito bem!';
+    scores[qid]=1;
+  } else {
+    btn.classList.add('wrong');
+    fb.className='quiz-feedback fail';
+    fb.textContent='❌ Resposta incorreta. Revise o conceito e continue!';
+    scores[qid]=0;
+    block.querySelectorAll('.quiz-opt').forEach(b=>{
+      if(!b.classList.contains('wrong')) b.style.opacity='0.4';
+    });
+  }
+  fb.style.display='block';
+  checkAllAnswered();
+}
+
+function checkAllAnswered(){
+  if(ALL_QS.every(q=>answered[q])){
+    const total=ALL_QS.reduce((s,q)=>s+(scores[q]||0),0);
+    showScore(total);
+  }
+}
+
+function showScore(got){
+  const bar=document.getElementById('scorebar');
+  bar.style.display='flex';
+  document.getElementById('scoreVal').textContent=got+'/10';
+  const pct=got/10;
+  let msg, detail;
+  if(pct===1)      { msg='🏆 Nota 10! Perfeito! Você dominou o conteúdo!';        detail='Excelente! Todas as respostas corretas!'; }
+  else if(pct>=0.9){ msg='🌟 Nota 9 — Incrível! Quase perfeito!';                 detail='Você errou apenas 1. Muito bem!'; }
+  else if(pct>=0.8){ msg='😃 Nota 8 — Muito bom! Continue assim!';                detail='Revise as questões que errou.'; }
+  else if(pct>=0.7){ msg='👍 Nota 7 — Bom desempenho!';                           detail='Você entendeu bastante. Revise os pontos errados.'; }
+  else if(pct>=0.6){ msg='📘 Nota 6 — Você está no caminho certo!';               detail='Releia os conceitos e tente novamente.'; }
+  else if(pct>=0.5){ msg='📚 Nota 5 — Metade certa! Pode melhorar!';             detail='Revise o material com atenção.'; }
+  else             { msg='💪 Continue estudando! Você consegue!';                  detail='Leia novamente os conceitos e tente de novo.'; }
+  document.getElementById('scoreMsg').textContent=msg;
+  document.getElementById('scoreDetail').textContent=detail;
+  bar.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function retryQuiz(){
+  scores={}; answered={};
+  ALL_QS.forEach(qid=>{
+    const block=document.getElementById(qid);
+    block.querySelectorAll('.quiz-opt').forEach(b=>{
+      b.disabled=false; b.className='quiz-opt'; b.style.opacity='';
+    });
+    const fb=document.getElementById('fb-'+qid);
+    fb.className='quiz-feedback'; fb.style.display='none';
+  });
+  document.getElementById('scorebar').style.display='none';
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+window.addEventListener('load',()=>{
+  initCanvas();
+  buildAdjTable();
+});
+</script>
+</body>
+</html>
